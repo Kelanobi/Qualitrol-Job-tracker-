@@ -1,0 +1,9 @@
+PySide6>=6.7,<6.10
+openpyxl>=3.1,<4
+pypdf>=5.0,<7
+smartsheet-python-sdk>=3.0,<4
+keyring>=25.0,<26
+PyInstaller>=6.0,<7
+pytest>=8.0,<9
+argon2-cffi>=23.0,<26
+

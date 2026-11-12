@@ -1,0 +1,36 @@
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+*.token
+*.hash
+
+# Python/runtime state
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.db
+*.sqlite*
+*.log
+
+# Generated packages and reports
+/build/
+/build-*/
+/dist/
+/dist-*/
+/outputs/
+*.exe
+
+# Local diagnostics and design captures
+/debug-*.txt
+/*.png
+/*.jpg
+/*.jpeg
+
+# IDE/OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

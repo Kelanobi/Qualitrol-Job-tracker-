@@ -46,6 +46,20 @@ def test_login_page_masks_password_and_enter_submits(tmp_path):
     assert page.password.text() == ""
 
 
+def test_login_page_prefills_windows_username_and_remembered_password_masked(tmp_path):
+    application()
+    class Controller:
+        def login_defaults(self):
+            return "kelvin.obi", "RememberedPassword"
+
+    page = LoginPage(Controller(), tmp_path)
+    page.reset()
+
+    assert page.email.text() == "kelvin.obi"
+    assert page.password.text() == "RememberedPassword"
+    assert page.password.echoMode() == QLineEdit.Password
+
+
 def test_history_apply_filters_emits_current_values():
     application()
     page = HistoryPage()

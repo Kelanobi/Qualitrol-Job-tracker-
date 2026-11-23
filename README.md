@@ -15,7 +15,10 @@ The local login screen opens without accessing Excel, Smartsheet or network driv
 
 ## Employee authentication and attribution
 
-- Login is required on every launch; no password or authenticated session is persisted.
+- Login confirmation is required on every launch; authenticated sessions are never persisted.
+- The login screen automatically fills the signed-in Windows username. After the first successful login,
+  the application password is stored in that user's Windows Credential Manager and restored masked on
+  later launches. Failed passwords are never saved, and stale saved credentials are removed after failure.
 - Only `@qualitrolcorp.com` email addresses are accepted, and the email prefix must match the signed-in Windows username unless an approved mapping is configured in `app/config.py`.
 - Windows account name and SID are read with Windows APIs. The in-memory session is cleared on Sign Out or application close.
 - The shared password is verified locally against an Argon2id hash supplied through `DMS_APPLICATION_PASSWORD_HASH` or bundled securely during packaging; plaintext passwords are never stored or logged.

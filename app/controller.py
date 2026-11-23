@@ -53,8 +53,31 @@ class ApplicationController:
             self.log.error("Malformed local database was quarantined at %s", recovered)
 
     def authenticate(self, email: str, password: str):
-        self.session = self.auth.authenticate(email, password)
+        try:
+            self.session = self.auth.authenticate(email, password)
+        except Exception:
+            try:
+                SecureCredentialStore().delete_login_password(self.auth.current_windows_username())
+            except Exception:
+                self.log.warning("Could not remove a stale remembered login", exc_info=True)
+            raise
+        try:
+            SecureCredentialStore().set_login_password(self.session.windows_username, password)
+        except Exception:
+            # Authentication remains usable if Credential Manager is disabled
+            # by local laptop policy.
+            self.log.warning("Could not remember the login securely", exc_info=True)
         return self.session
+
+    def login_defaults(self) -> tuple[str, str]:
+        """Return the Windows username and its securely remembered password."""
+        username = self.auth.current_windows_username()
+        try:
+            password = SecureCredentialStore().get_login_password(username) or ""
+        except Exception:
+            self.log.warning("Could not load the remembered login", exc_info=True)
+            password = ""
+        return username, password
 
     def sign_out(self) -> None:
         if self.session is not None:

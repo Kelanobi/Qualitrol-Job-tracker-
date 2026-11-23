@@ -69,11 +69,23 @@ class LoginPage(QWidget):
         outer.addStretch()
 
     def reset(self) -> None:
-        self.password.clear()
         self.show_password.setChecked(False)
+        self.email.clear()
+        self.password.clear()
+        try:
+            username, password = self.controller.login_defaults()
+        except Exception:
+            username, password = "", ""
+        self.email.setText(username)
+        self.password.setText(password)
         self.error.clear()
         self.error.setVisible(False)
-        self.email.setFocus()
+        if username and password:
+            self.sign_in.setFocus()
+        elif username:
+            self.password.setFocus()
+        else:
+            self.email.setFocus()
 
     def submit(self) -> None:
         self.sign_in.setEnabled(False)

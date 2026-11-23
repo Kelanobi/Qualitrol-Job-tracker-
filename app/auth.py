@@ -131,6 +131,9 @@ class AuthenticationService:
         self._failures = 0
         self._locked_until: datetime | None = None
 
+    def current_windows_username(self) -> str:
+        return self.identity_provider.current().username
+
     def authenticate(self, email: str, password: str) -> AuthenticatedSession:
         started = datetime.now()
         entered_identity = email.strip().lower()

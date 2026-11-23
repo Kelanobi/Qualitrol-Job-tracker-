@@ -8,6 +8,7 @@ from typing import Protocol
 
 SERVICE_NAME = "DMSOrderTracker"
 TOKEN_ACCOUNT = "SmartsheetApiToken"
+LOGIN_PASSWORD_ACCOUNT_PREFIX = "LoginPassword:"
 TOKEN_ENVIRONMENT_VARIABLE = "DMS_SMARTSHEET_TOKEN"
 BUNDLED_TOKEN_PATH = Path("_secure") / "smartsheet.token"
 
@@ -51,3 +52,22 @@ class SecureCredentialStore:
 
     def delete_smartsheet_token(self) -> None:
         self._backend.delete_password(SERVICE_NAME, TOKEN_ACCOUNT)
+
+    @staticmethod
+    def _login_account(username: str) -> str:
+        normalized = username.strip().casefold()
+        if not normalized:
+            raise ValueError("The Windows username cannot be empty.")
+        return f"{LOGIN_PASSWORD_ACCOUNT_PREFIX}{normalized}"
+
+    def get_login_password(self, username: str) -> str | None:
+        password = self._backend.get_password(SERVICE_NAME, self._login_account(username))
+        return password if password else None
+
+    def set_login_password(self, username: str, password: str) -> None:
+        if not password:
+            raise ValueError("The login password cannot be empty.")
+        self._backend.set_password(SERVICE_NAME, self._login_account(username), password)
+
+    def delete_login_password(self, username: str) -> None:
+        self._backend.delete_password(SERVICE_NAME, self._login_account(username))

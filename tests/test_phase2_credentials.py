@@ -1,7 +1,8 @@
 import pytest
 
 from app.phase2.credentials import (
-    SERVICE_NAME, TOKEN_ACCOUNT, TOKEN_ENVIRONMENT_VARIABLE, SecureCredentialStore,
+    LOGIN_PASSWORD_ACCOUNT_PREFIX, SERVICE_NAME, TOKEN_ACCOUNT, TOKEN_ENVIRONMENT_VARIABLE,
+    SecureCredentialStore,
 )
 
 
@@ -32,6 +33,22 @@ def test_token_is_kept_in_credential_backend_not_application_storage():
 def test_empty_token_is_rejected():
     with pytest.raises(ValueError, match="cannot be empty"):
         SecureCredentialStore(FakeBackend()).set_smartsheet_token("  ")
+
+
+def test_login_password_is_scoped_to_normalized_windows_username():
+    backend = FakeBackend()
+    store = SecureCredentialStore(backend)
+    store.set_login_password(" Kelvin.Obi ", "Password123")
+    account = f"{LOGIN_PASSWORD_ACCOUNT_PREFIX}kelvin.obi"
+    assert backend.values[(SERVICE_NAME, account)] == "Password123"
+    assert store.get_login_password("KELVIN.OBI") == "Password123"
+    store.delete_login_password("kelvin.obi")
+    assert store.get_login_password("kelvin.obi") is None
+
+
+def test_empty_login_password_is_rejected():
+    with pytest.raises(ValueError, match="cannot be empty"):
+        SecureCredentialStore(FakeBackend()).set_login_password("kelvin.obi", "")
 
 
 def test_centrally_deployed_token_is_used_on_any_laptop(monkeypatch):

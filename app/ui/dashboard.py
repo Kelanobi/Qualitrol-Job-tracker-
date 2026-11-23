@@ -6,7 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (
-    QFrame, QHBoxLayout, QHeaderView, QLabel, QProgressBar, QPushButton, QStyle,
+    QBoxLayout, QFrame, QHBoxLayout, QHeaderView, QLabel, QProgressBar, QPushButton, QStyle,
     QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
@@ -27,6 +27,8 @@ class HeroBanner(QFrame):
         self.greeting.setObjectName("heroGreeting")
         subtitle = QLabel("Verify DMS order documents and keep the workbook up to date.")
         subtitle.setObjectName("heroSubtitle")
+        subtitle.setWordWrap(True)
+        subtitle.setMinimumWidth(0)
         copy.addWidget(eyebrow)
         copy.addWidget(self.greeting)
         copy.addWidget(subtitle)
@@ -78,6 +80,7 @@ class QuickActionCard(QFrame):
         title_label.setObjectName("quickActionTitle")
         description_label = QLabel(description)
         description_label.setObjectName("dashboardSubtitle")
+        description_label.setWordWrap(True)
         copy.addWidget(title_label)
         copy.addWidget(description_label)
         heading.addLayout(copy, 1)
@@ -156,8 +159,12 @@ class DashboardPage(QWidget):
         self.hero = HeroBanner(assets_dir / "transformer_banner_2026-10-22.png")
         outer.addWidget(self.hero)
 
-        actions = QHBoxLayout()
-        actions.setSpacing(12)
+        self.actions_layout = QHBoxLayout()
+        self.actions_layout.setSpacing(12)
+        # Start compact so the horizontal minimum-size hint cannot force a
+        # narrow maximized window beyond the physical screen before its first
+        # resize event arrives.
+        self.actions_layout.setDirection(QBoxLayout.TopToBottom)
         automatic = QuickActionCard(
             "Automatic Search", "Find and verify DMS orders that have never been checked before.",
             "Start Automatic Search  ›", self.style().standardIcon(QStyle.SP_FileDialogContentsView), True,
@@ -173,10 +180,10 @@ class DashboardPage(QWidget):
         automatic.clicked.connect(self.automatic_requested)
         manual.clicked.connect(self.manual_requested)
         self.automatic_recheck.clicked.connect(self.automatic_recheck_requested)
-        actions.addWidget(automatic, 1)
-        actions.addWidget(manual, 1)
-        actions.addWidget(self.automatic_recheck, 1)
-        outer.addLayout(actions)
+        self.actions_layout.addWidget(automatic, 1)
+        self.actions_layout.addWidget(manual, 1)
+        self.actions_layout.addWidget(self.automatic_recheck, 1)
+        outer.addLayout(self.actions_layout)
 
         summary = QFrame()
         summary.setObjectName("dashboardPanel")
@@ -190,6 +197,8 @@ class DashboardPage(QWidget):
         summary_title.setObjectName("dashboardTitle")
         summary_subtitle = QLabel("Overview of DMS orders in the current workbook.")
         summary_subtitle.setObjectName("dashboardSubtitle")
+        summary_subtitle.setWordWrap(True)
+        summary_subtitle.setMinimumWidth(0)
         summary_copy.addWidget(summary_title)
         summary_copy.addWidget(summary_subtitle)
         summary_header.addLayout(summary_copy)
@@ -242,6 +251,8 @@ class DashboardPage(QWidget):
         recent_title.setObjectName("dashboardTitle")
         recent_subtitle = QLabel("Latest verification results from the most recent searches.")
         recent_subtitle.setObjectName("dashboardSubtitle")
+        recent_subtitle.setWordWrap(True)
+        recent_subtitle.setMinimumWidth(0)
         recent_copy.addWidget(recent_title)
         recent_copy.addWidget(recent_subtitle)
         recent_header.addLayout(recent_copy)
@@ -276,6 +287,15 @@ class DashboardPage(QWidget):
         self.updated_label.setAlignment(Qt.AlignRight)
         self.updated_label.hide()
         outer.addWidget(self.updated_label)
+
+    def resizeEvent(self, event) -> None:
+        # Windows display scaling can reduce a 14-inch 1080p screen to fewer
+        # than 1,000 logical pixels. Stack the action cards instead of letting
+        # their contents run beyond the viewport.
+        direction = QBoxLayout.TopToBottom if event.size().width() < 1050 else QBoxLayout.LeftToRight
+        if self.actions_layout.direction() != direction:
+            self.actions_layout.setDirection(direction)
+        super().resizeEvent(event)
 
     def set_user(self, email: str) -> None:
         self.hero.set_user(email)

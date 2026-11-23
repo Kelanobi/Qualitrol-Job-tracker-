@@ -9,7 +9,7 @@ from PySide6.QtCore import QThread, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox,
-    QPushButton, QStackedWidget, QToolButton, QVBoxLayout, QWidget,
+    QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QToolButton, QVBoxLayout, QWidget,
 )
 
 from app.controller import ApplicationController
@@ -54,7 +54,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("DMS Order Tracker")
         self.setWindowIcon(QIcon(str(self.assets_dir / "app_icon.ico")))
         self.resize(1360, 900)
-        self.setMinimumSize(1080, 700)
+        # Stay within the logical desktop area on smaller laptops and at
+        # 125–175% Windows display scaling. Page scrolling preserves access to
+        # every control when vertical space is limited.
+        self.setMinimumSize(800, 560)
 
         root = QWidget()
         root_layout = QVBoxLayout(root)
@@ -62,7 +65,19 @@ class MainWindow(QMainWindow):
         root_layout.setSpacing(0)
         root_layout.addWidget(self._build_header())
         self.stack = QStackedWidget()
-        root_layout.addWidget(self.stack, 1)
+        # The largest page must not impose its width on every other page. This
+        # lets the dashboard use the actual viewport width at high DPI instead
+        # of creating a permanently clipped 1080px-wide canvas.
+        self.stack.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.stack.setMinimumWidth(0)
+        self.content_scroll = QScrollArea()
+        self.content_scroll.setObjectName("applicationScroll")
+        self.content_scroll.setWidgetResizable(True)
+        self.content_scroll.setFrameShape(QFrame.NoFrame)
+        self.content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.content_scroll.setWidget(self.stack)
+        root_layout.addWidget(self.content_scroll, 1)
         self.application_root = root
 
         self.dashboard = DashboardPage(self.assets_dir)

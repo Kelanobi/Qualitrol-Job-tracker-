@@ -7,13 +7,16 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QComboBox, QLineEdit, QMessageBox, QPushButton, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QApplication, QBoxLayout, QComboBox, QLineEdit, QMessageBox, QPushButton, QTableWidgetItem,
+)
 
 from app.ui.dashboard import DashboardPage
 from app.ui.history_page import HistoryPage
 from app.ui.search_pages import AutomaticSearchPage, ManualSearchPage, ProgressPage
 from app.ui.phase2_page import Phase2ProjectPage
 from app.ui.login_page import LoginPage
+from app.ui.main_window import MainWindow
 from app.ui.results_page import ResultsPage
 from app.phase2.models import (
     EquipmentCandidate, IssueSeverity, Phase2DryRun, PlanAction, ProjectOrder,
@@ -51,6 +54,9 @@ def test_login_page_prefills_windows_username_and_remembered_password_masked(tmp
     class Controller:
         def login_defaults(self):
             return "kelvin.obi", "RememberedPassword"
+
+        def sign_out(self):
+            pass
 
     page = LoginPage(Controller(), tmp_path)
     page.reset()
@@ -108,6 +114,40 @@ def test_dashboard_offers_automatic_recheck_all():
     )
     button.click()
     assert emitted == [True]
+
+
+def test_dashboard_stacks_actions_on_narrow_logical_screen():
+    app = application()
+    page = DashboardPage()
+    page.resize(900, 700)
+    page.show()
+    app.processEvents()
+    assert page.actions_layout.direction() == QBoxLayout.TopToBottom
+
+    page.resize(1400, 900)
+    app.processEvents()
+    assert page.actions_layout.direction() == QBoxLayout.LeftToRight
+    page.close()
+
+
+def test_main_window_dashboard_uses_narrow_scroll_viewport(tmp_path):
+    app = application()
+    class Controller:
+        def login_defaults(self):
+            return "kelvin.obi", "RememberedPassword"
+
+        def sign_out(self):
+            pass
+
+    window = MainWindow(Controller(), tmp_path)
+    window.shell.setCurrentWidget(window.application_root)
+    window.resize(900, 650)
+    window.show()
+    app.processEvents()
+
+    assert window.stack.width() <= window.content_scroll.viewport().width() + 2
+    assert window.dashboard.actions_layout.direction() == QBoxLayout.TopToBottom
+    window.close()
 
 
 def test_phase2_has_shared_add_prefix_action():
